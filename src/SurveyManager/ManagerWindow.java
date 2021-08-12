@@ -3,6 +3,8 @@ package SurveyManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 
 /**
@@ -23,6 +25,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     JTextArea txtLinkedList, txtLBinaryTree;
     JTable tblQuestions;
     File loadFile = new File("src/SampleData.txt");
+    SurveyQuestionData[] SurveyDataGlobal;
 
     /**
      * Entry point for application
@@ -139,6 +142,40 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         try
         {
             BufferedReader br = new BufferedReader(new FileReader(loadFile));
+
+            //takes a count of lines in the sample data
+            int totalLines = 0;
+            String readingLine;
+            List<String> readData = new ArrayList<String>();
+            while ((readingLine = br.readLine() )!= null)
+            {
+                totalLines++;
+                readData.add(readingLine);
+            }
+            //correcting for files that aren't multiples of 8
+            totalLines = totalLines - (totalLines%8);
+            //How many sets of survey questions to create
+            int runNumber = (totalLines / 8) - 1;
+            //reading data into data class
+            SurveyDataGlobal = new SurveyQuestionData[runNumber];
+            for (int i  = 1; i <= runNumber; i++)
+            {
+                int currentLine = 8 * i;
+                SurveyQuestionData temp = new SurveyQuestionData();
+                temp.setQuestionInt(Integer.parseInt(readData.get(currentLine++)));
+                temp.setTopic(readData.get(currentLine++));
+                temp.setQuestionBody(readData.get(currentLine++));
+                temp.setAnswerA(readData.get(currentLine++));
+                temp.setAnswerB(readData.get(currentLine++));
+                temp.setAnswerC(readData.get(currentLine++));
+                temp.setAnswerD(readData.get(currentLine++));
+                temp.setAnswerE(readData.get(currentLine++));
+                //i must be adjusted here to account for set of junk lines at top of file
+                SurveyDataGlobal[i -1] = temp;
+            }
+            SurveyQuestionData[] debug = CustomSort.BubbleSort(SurveyDataGlobal);
+            int debug1 = 1;
+
         }
         catch (Exception e)
         {
