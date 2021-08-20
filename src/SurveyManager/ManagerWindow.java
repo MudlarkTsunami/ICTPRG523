@@ -27,6 +27,9 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     File loadFile = new File("src/SampleData.txt");
     SurveyQuestionData[] SurveyDataGlobal;
 
+    JTable table;
+    MyModel wordModel;
+
     /**
      * Entry point for application
      * @param args
@@ -71,6 +74,50 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         loadLinkedListSection(springLayout, 500);
         loadBinaryTreeSection(springLayout, 650);
         loadOrderDisplaySection(springLayout, 800);
+        WordAssociationTable(springLayout);
+    }
+
+    public void WordAssociationTable(SpringLayout myPanelLayout)
+    {
+        // Create a panel to hold all other components
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout());
+        add(topPanel);
+
+        // Create column names
+        String columnNames[] =
+                { "Word 1", "Word 2", "Sent"};
+
+        // Create some data
+        ArrayList<Object[]> dataValues = new ArrayList();
+        dataValues.add(new Object[] {"Yes","No",true});
+        dataValues.add(new Object[] {"Hi","there",true});
+        dataValues.add(new Object[] {"True","False",true});
+        dataValues.add(new Object[] {"Cat","Dog",false});
+
+        // constructor of JTable model
+        wordModel = new MyModel(dataValues, columnNames);
+
+        // Create a new table instance
+        table = new JTable(wordModel);
+
+        // Configure some of JTable's paramters
+        table.isForegroundSet();
+        table.setShowHorizontalLines(false);
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(true);
+        add(table);
+
+        // Change the text and background colours
+        table.setSelectionForeground(Color.white);
+        table.setSelectionBackground(Color.red);
+
+        // Add the table to a scrolling pane, size and locate
+        JScrollPane scrollPane = table.createScrollPaneForTable(table);
+        topPanel.add(scrollPane, BorderLayout.CENTER);
+        topPanel.setPreferredSize(new Dimension(172, 115));
+        myPanelLayout.putConstraint(SpringLayout.WEST, topPanel, 280, SpringLayout.WEST, this);
+        myPanelLayout.putConstraint(SpringLayout.NORTH, topPanel, 40, SpringLayout.NORTH, this);
     }
 
 
@@ -186,6 +233,16 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     @Override
     public void actionPerformed(ActionEvent e)
     {
+        if (e.getSource() == btnSend)
+        {
+            DList dList = new DList();
+            for (SurveyQuestionData var: SurveyDataGlobal)
+            {
+                dList.head.append(new Node(var.getTopic().toString() + "  -->  "));
+            }
+            String Display = dList.toString();
+            txtLinkedList.append(Display);
+        }
 
     }
 
