@@ -7,13 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 
-/**
- * <H1>ManagerWindow Program</H1>
- * The ManagerWindow program allows the user to open a survey file and
- * send survey questions to the sister ClientWindow program
- * @author Hayden Baker
- * @version 0.01
- */
+
 
 /*
 
@@ -39,7 +33,13 @@ Mark's Comments (21/8/2021):
 
 */
 
-
+/**
+ * <H1>ManagerWindow Program</H1>
+ * The ManagerWindow program allows the user to open a survey file and
+ * send survey questions to the sister ClientWindow program
+ * @author Hayden Baker
+ * @version 0.01
+ */
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
     String version = "v 0.01";
@@ -79,7 +79,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         setBounds(50,50, 800, 1000);
         setTitle("Flawless Feedback    " + version);
-        readFromFile();
+        readFromFile(loadFile);
         //SurveyDataGlobal = CustomSort.BubbleSortAsc(SurveyDataGlobal);
         addWindowListener(new WindowAdapter()
         {
@@ -113,14 +113,31 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     private void loadDetailView(SpringLayout layout, int loadHeight)
     {
         int loadWidthLabel = 380, loadWidthText = 440;
-        lblDetailTopic = LibraryComponents.LocateAJLabel(this,layout,"Topic", loadWidthLabel, loadHeight);
+        lblDetailTopic = LibraryComponents.LocateAJLabel(this,layout,"Topic:", loadWidthLabel, loadHeight);
         txtDetailTopic = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
         loadHeight += 25;
-        lblDetailQuestion = LibraryComponents.LocateAJLabel(this,layout,"Question", loadWidthLabel, loadHeight);
+        lblDetailQuestion = LibraryComponents.LocateAJLabel(this,layout,"Question:", loadWidthLabel, loadHeight);
         txtDetailQuestion = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
         loadHeight += 25;
+        lblDetailA = LibraryComponents.LocateAJLabel(this,layout,"A:", loadWidthLabel, loadHeight);
+        txtDetailA = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+        lblDetailB = LibraryComponents.LocateAJLabel(this,layout,"B:", loadWidthLabel, loadHeight);
+        txtDetailB = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+        lblDetailC = LibraryComponents.LocateAJLabel(this,layout,"C:", loadWidthLabel, loadHeight);
+        txtDetailC = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+        lblDetailD = LibraryComponents.LocateAJLabel(this,layout,"D:", loadWidthLabel, loadHeight);
+        txtDetailD = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+        lblDetailE = LibraryComponents.LocateAJLabel(this,layout,"E:", loadWidthLabel, loadHeight);
+        txtDetailE = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+
     }
 
+
+    //Temporary Method for updating dataValues for testing purposes
     public void updateModel ()
     {
         SurveyModel temp;
@@ -138,6 +155,11 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         surveyModel = temp;
     }
 
+
+    /**
+     * Method for showing the table the application on the UI
+     * @param myPanelLayout
+     */
     public void loadTable(SpringLayout myPanelLayout)
     {
         // Create a panel to hold all other components
@@ -186,7 +208,11 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         questionsTable.addMouseListener(this);
     }
 
-
+    /**
+     * Method for loading the buttons below the table element
+     * @param layout
+     * @param loadHeight Desired top of load height at runtime
+     */
     private void loadTableRowButtons(SpringLayout layout, int loadHeight)
     {
         int currentXOffset = 10;
@@ -202,6 +228,11 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         btnSend = LibraryComponents.LocateAJButton(this, this, layout, "Send", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
     }
 
+    /**
+     * Loading the linked list display area in the UI
+     * @param layout Desired top of load height at runtime
+     * @param loadHeight
+     */
     private void loadLinkedListSection(SpringLayout layout, int loadHeight)
     {
         int currentXOffset = 10;
@@ -210,6 +241,12 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     }
 
+
+    /**
+     * Loading the binary tree display area in the UI
+     * @param layout
+     * @param loadHeight Desired top of load height at runtime
+     */
     private void loadBinaryTreeSection(SpringLayout layout, int loadHeight)
     {
         int currentXOffset = 10;
@@ -219,6 +256,11 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         btnDisplayBinaryTree = LibraryComponents.LocateAJButton(this,this,layout, "Display", currentXOffset, loadHeight - commonButtonHeight, commonButtonWidth, commonButtonHeight);
     }
 
+    /**
+     * Loading the order display area in the UI
+     * @param layout
+     * @param loadHeight Desired top of load height at runtime
+     */
     private void loadOrderDisplaySection (SpringLayout layout, int loadHeight)
     {
         int currentXOffset= 10;
@@ -241,11 +283,16 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         btnPostOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
     }
 
-    private void readFromFile()
+
+    /**
+     * Takes the data from the sentFile and puts it into SurveyDataGlobal
+     * @param sentFile File to be read
+     */
+    private void readFromFile(File sentFile)
     {
         try
         {
-            BufferedReader br = new BufferedReader(new FileReader(loadFile));
+            BufferedReader br = new BufferedReader(new FileReader(sentFile));
 
             //takes a count of lines in the sample data
             int totalLines = 0;
@@ -273,7 +320,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 temp.setAnswerB(readData.get(currentLine++));
                 temp.setAnswerC(readData.get(currentLine++));
                 temp.setAnswerD(readData.get(currentLine++));
-                temp.setAnswerE(readData.get(currentLine++));
+                temp.setAnswerE(readData.get(currentLine));
                 //i must be adjusted here to account for set of junk lines at top of file
                 SurveyDataGlobal[i -1] = temp;
             }
@@ -362,7 +409,14 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         if (e.getSource() == questionsTable)
         {
-            int debug =1;
+            int selected = questionsTable.getSelectedRow();
+            txtDetailQuestion.setText(SurveyDataGlobal[selected].getQuestionBody());
+            txtDetailTopic.setText(SurveyDataGlobal[selected].getTopic());
+            txtDetailA.setText(SurveyDataGlobal[selected].getAnswerA());
+            txtDetailB.setText(SurveyDataGlobal[selected].getAnswerB());
+            txtDetailC.setText(SurveyDataGlobal[selected].getAnswerC());
+            txtDetailD.setText(SurveyDataGlobal[selected].getAnswerD());
+            txtDetailE.setText(SurveyDataGlobal[selected].getAnswerE());
         }
 
     }
