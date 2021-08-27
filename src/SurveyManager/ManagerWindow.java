@@ -14,21 +14,52 @@ import javax.swing.*;
  * @author Hayden Baker
  * @version 0.01
  */
+
+/*
+
+Mark's Comments (21/8/2021):
+
+ - SurveyDataGlobal - is an array of SurveyQuestionData objects
+ - readFromFile method - reads the data from the data file and adds it to SurveyDataGlobal array.
+ - The Bubble Sort methods work with SurveyQuestionData objects arrays
+ - dataValues is a 2D Array and loads 3 columns of data from the SurveyDataGlobal array
+ - dataValues has been declared locally in the loadTable method.
+ - the model and JTable (surveyModel and questionsTable) are based on dataValues, not SurveyDataGlobal
+ - SurveyDataGlobal is being sorted, dataValues is NOT being sorted, nor updated.
+ - Therefore the table (questionsTable) is not displaying the newly sorted data
+
+ - You may be aware already, but I also noted that your current Bubble Sort methods
+       only sort the Question Number and not the other 7 fields.
+
+
+ - Interim updates made:
+   - dataValues has been made global.
+   - In the 'run' method the bubble sort line (added for testing purposes) has been commented out
+   - In the ActionPerformed method, code has been added to the section:  if (e.getSource() == btnSortQuestion)
+
+*/
+
+
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
     String version = "v 0.01";
     int commonButtonHeight = 30, commonButtonWidth = 100;
-    JButton btnSortQuestion, btnSortTopic, btnSortAnswer, btnExit, btnSend, btnDisplayBinaryTree,
+    JButton btnSortNumber, btnSortTopic, btnSortQuestion, btnExit, btnSend, btnDisplayBinaryTree,
             btnPreOrderDisplay, btnPreOrderSave, btnInOrderDisplay, btnInOrderSave, btnPostOrderDisplay,
             btnPostOrderSave;
-    JLabel lblSortBy, lblLinkedList, lblBinaryTree, lblPreOrder, lblInOrder, lblPostOrder;
+    JLabel lblSortBy, lblLinkedList, lblBinaryTree, lblPreOrder, lblInOrder, lblPostOrder,
+    lblDetailQuestion, lblDetailTopic, lblDetailA, lblDetailB, lblDetailC, lblDetailD, lblDetailE;
     JTextArea txtLinkedList, txtLBinaryTree;
+    JTextField txtDetailTopic, txtDetailQuestion, txtDetailA, txtDetailB, txtDetailC, txtDetailD, txtDetailE;
     JTable tblQuestions;
-    File loadFile = new File("src/SampleData.txt");
+    File loadFile = new File("SampleData.txt");
     SurveyQuestionData[] SurveyDataGlobal;
 
-    JTable table;
+    JTable questionsTable;
     MyModel wordModel;
+    SurveyModel surveyModel;
+    SpringLayout springLayout;
+    Object[][] dataValues;
 
     /**
      * Entry point for application
@@ -49,6 +80,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         setBounds(50,50, 800, 1000);
         setTitle("Flawless Feedback    " + version);
         readFromFile();
+        //SurveyDataGlobal = CustomSort.BubbleSortAsc(SurveyDataGlobal);
         addWindowListener(new WindowAdapter()
         {
             @Override
@@ -60,6 +92,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         displayMainGUI();
         setResizable(false);
         setVisible(true);
+
     }
 
     /**
@@ -67,17 +100,45 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
      */
     private void displayMainGUI()
     {
-        SpringLayout springLayout = new SpringLayout();
+        springLayout = new SpringLayout();
         setLayout(springLayout);
-        loadTable(springLayout,10);
         loadTableRowButtons(springLayout, 450);
         loadLinkedListSection(springLayout, 500);
         loadBinaryTreeSection(springLayout, 650);
         loadOrderDisplaySection(springLayout, 800);
-        WordAssociationTable(springLayout);
+        loadTable(springLayout);
+        loadDetailView(springLayout, 30);
     }
 
-    public void WordAssociationTable(SpringLayout myPanelLayout)
+    private void loadDetailView(SpringLayout layout, int loadHeight)
+    {
+        int loadWidthLabel = 380, loadWidthText = 440;
+        lblDetailTopic = LibraryComponents.LocateAJLabel(this,layout,"Topic", loadWidthLabel, loadHeight);
+        txtDetailTopic = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+        lblDetailQuestion = LibraryComponents.LocateAJLabel(this,layout,"Question", loadWidthLabel, loadHeight);
+        txtDetailQuestion = LibraryComponents.LocateAJTextField(this, this, layout, 30, loadWidthText, loadHeight);
+        loadHeight += 25;
+    }
+
+    public void updateModel ()
+    {
+        SurveyModel temp;
+        String columnNames[] =
+                { "Number", "Topic", "Question"};
+
+        dataValues = new Object[SurveyDataGlobal.length][columnNames.length];
+        for (int i = 0; i<SurveyDataGlobal.length ; i++)
+        {
+            dataValues[i][0] = "TEST";
+            dataValues[i][1] = "TEST";
+            dataValues[i][2] = "TEST";
+        }
+        temp = new SurveyModel(columnNames,dataValues);
+        surveyModel = temp;
+    }
+
+    public void loadTable(SpringLayout myPanelLayout)
     {
         // Create a panel to hold all other components
         JPanel topPanel = new JPanel();
@@ -86,59 +147,55 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
         // Create column names
         String columnNames[] =
-                { "Word 1", "Word 2", "Sent"};
+                { "Number", "Topic", "Question"};
 
         // Create some data
-        ArrayList<Object[]> dataValues = new ArrayList();
-        dataValues.add(new Object[] {"Yes","No",true});
-        dataValues.add(new Object[] {"Hi","there",true});
-        dataValues.add(new Object[] {"True","False",true});
-        dataValues.add(new Object[] {"Cat","Dog",false});
+        dataValues = new Object[SurveyDataGlobal.length][columnNames.length];
+//        dataValues = new Object[SurveyDataGlobal.length][columnNames.length];
+        for (int i = 0; i<SurveyDataGlobal.length ; i++)
+        {
+            dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
+            dataValues[i][1] = SurveyDataGlobal[i].getTopic();
+            dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
+        }
+
 
         // constructor of JTable model
-        wordModel = new MyModel(dataValues, columnNames);
+        surveyModel = new SurveyModel(columnNames, dataValues);
 
         // Create a new table instance
-        table = new JTable(wordModel);
+        questionsTable = new JTable(surveyModel);
 
-        // Configure some of JTable's paramters
-        table.isForegroundSet();
-        table.setShowHorizontalLines(false);
-        table.setRowSelectionAllowed(true);
-        table.setColumnSelectionAllowed(true);
-        add(table);
+        // Configure some of JTable's parameters
+        questionsTable.isForegroundSet();
+        questionsTable.setShowHorizontalLines(false);
+        questionsTable.setRowSelectionAllowed(true);
+        questionsTable.setColumnSelectionAllowed(true);
+        add(questionsTable);
 
         // Change the text and background colours
-        table.setSelectionForeground(Color.white);
-        table.setSelectionBackground(Color.red);
+        questionsTable.setSelectionForeground(Color.white);
+        questionsTable.setSelectionBackground(Color.red);
 
         // Add the table to a scrolling pane, size and locate
-        JScrollPane scrollPane = table.createScrollPaneForTable(table);
+        JScrollPane scrollPane = questionsTable.createScrollPaneForTable(questionsTable);
         topPanel.add(scrollPane, BorderLayout.CENTER);
-        topPanel.setPreferredSize(new Dimension(172, 115));
-        myPanelLayout.putConstraint(SpringLayout.WEST, topPanel, 280, SpringLayout.WEST, this);
-        myPanelLayout.putConstraint(SpringLayout.NORTH, topPanel, 40, SpringLayout.NORTH, this);
+        topPanel.setPreferredSize(new Dimension(350, 400));
+        myPanelLayout.putConstraint(SpringLayout.WEST, topPanel, 10, SpringLayout.WEST, this);
+        myPanelLayout.putConstraint(SpringLayout.NORTH, topPanel, 10, SpringLayout.NORTH, this);
+        questionsTable.addMouseListener(this);
     }
 
-
-
-    private void loadTable(SpringLayout layout, int loadHeight)
-    {
-        JPanel tablePanel = new JPanel();
-        tablePanel.setLayout(new BorderLayout());
-        add(tablePanel);
-
-    }
 
     private void loadTableRowButtons(SpringLayout layout, int loadHeight)
     {
         int currentXOffset = 10;
         lblSortBy = LibraryComponents.LocateAJLabel(this,layout,"Sort By", currentXOffset, loadHeight-commonButtonHeight);
-        btnSortAnswer = LibraryComponents.LocateAJButton(this, this, layout, "Question", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
+        btnSortNumber = LibraryComponents.LocateAJButton(this, this, layout, "Question", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += commonButtonWidth + commonButtonWidth/2;
         btnSortTopic = LibraryComponents.LocateAJButton(this, this, layout, "Topic", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += commonButtonWidth + commonButtonWidth/2;
-        btnSortAnswer = LibraryComponents.LocateAJButton(this, this, layout, "Answer", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
+        btnSortQuestion = LibraryComponents.LocateAJButton(this, this, layout, "Answer", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += commonButtonWidth + commonButtonWidth;
         btnExit = LibraryComponents.LocateAJButton(this, this, layout, "Exit", currentXOffset, loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += commonButtonWidth + commonButtonWidth/2;
@@ -220,9 +277,6 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 //i must be adjusted here to account for set of junk lines at top of file
                 SurveyDataGlobal[i -1] = temp;
             }
-            SurveyQuestionData[] debug = CustomSort.BubbleSort(SurveyDataGlobal);
-            int debug1 = 1;
-
         }
         catch (Exception e)
         {
@@ -243,6 +297,45 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             String Display = dList.toString();
             txtLinkedList.append(Display);
         }
+
+        if (e.getSource() == btnSortNumber)
+        {
+            CustomSort.BubbleSort(SurveyDataGlobal);
+            for (int i = 0; i<SurveyDataGlobal.length ; i++)
+            {
+                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
+                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
+                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
+            }
+            surveyModel.fireTableDataChanged();
+        }
+        if (e.getSource() == btnSortQuestion)
+        {
+            CustomSort.SelectionSort(SurveyDataGlobal);
+            for (int i = 0; i<SurveyDataGlobal.length ; i++)
+            {
+                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
+                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
+                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
+            }
+            surveyModel.fireTableDataChanged();
+
+        }
+
+        if (e.getSource() == btnSortTopic)
+        {
+            CustomSort.InsertionSort(SurveyDataGlobal);
+            for (int i = 0; i<SurveyDataGlobal.length ; i++)
+            {
+                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
+                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
+                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
+            }
+            surveyModel.fireTableDataChanged();
+
+        }
+
+
 
     }
 
@@ -267,6 +360,10 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     @Override
     public void mouseClicked(MouseEvent e)
     {
+        if (e.getSource() == questionsTable)
+        {
+            int debug =1;
+        }
 
     }
 

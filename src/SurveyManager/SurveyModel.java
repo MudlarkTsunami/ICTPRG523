@@ -4,6 +4,12 @@ import javax.swing.table.AbstractTableModel;
 
 public class SurveyModel extends AbstractTableModel
 {
+    SurveyModel (String[] sentColumns, Object[][] sentData)
+    {
+        columnNames = sentColumns;
+        data = sentData;
+
+    }
 
     private String[] columnNames;
     private Object[][] data;
