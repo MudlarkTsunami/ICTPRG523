@@ -3,9 +3,12 @@ package SurveyManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.text.StyledEditorKit;
 
 
 
@@ -43,11 +46,11 @@ Mark's Comments (21/8/2021):
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
     String version = "v 0.01";
-    int commonButtonHeight = 30, commonButtonWidth = 100;
+    int commonButtonHeight = 30, commonButtonWidth = 100, selectedSurvey = 0, Timer = 30, TimerMemory;
     JButton btnSortNumber, btnSortTopic, btnSortQuestion, btnExit, btnSend, btnDisplayBinaryTree,
             btnPreOrderDisplay, btnPreOrderSave, btnInOrderDisplay, btnInOrderSave, btnPostOrderDisplay,
-            btnPostOrderSave;
-    JLabel lblSortBy, lblLinkedList, lblBinaryTree, lblPreOrder, lblInOrder, lblPostOrder,
+            btnPostOrderSave, btnIncreaseTimer, btnDecreaseTimer;
+    JLabel lblSortBy, lblLinkedList, lblBinaryTree, lblPreOrder, lblInOrder, lblPostOrder, lblTimer, lblTimerNumber,
     lblDetailQuestion, lblDetailTopic, lblDetailA, lblDetailB, lblDetailC, lblDetailD, lblDetailE;
     JTextArea txtLinkedList, txtLBinaryTree;
     JTextField txtDetailTopic, txtDetailQuestion, txtDetailA, txtDetailB, txtDetailC, txtDetailD, txtDetailE;
@@ -60,6 +63,20 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     SurveyModel surveyModel;
     SpringLayout springLayout;
     Object[][] dataValues;
+    BinaryTree theTree;
+
+    //Chat elements
+    private Socket socket = null;
+    private DataInputStream console = null;
+    private DataOutputStream streamOut = null;
+    private ChatClientThread1 client1 = null;
+    private String serverName = "localhost";
+    private int serverPort = 4444;
+
+    //Timer Elements
+    Long startTime, elapsedTime, elapsedSeconds, secondsDisplay;
+    boolean timerLocked = false;
+
 
     /**
      * Entry point for application
@@ -80,6 +97,9 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         setBounds(50,50, 800, 1000);
         setTitle("Flawless Feedback    " + version);
         readFromFile(loadFile);
+        theTree = new BinaryTree();
+
+        addToBinaryTree();
         //SurveyDataGlobal = CustomSort.BubbleSortAsc(SurveyDataGlobal);
         addWindowListener(new WindowAdapter()
         {
@@ -90,9 +110,30 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             }
         });
         displayMainGUI();
+        DisplayTimerView();
         setResizable(false);
         setVisible(true);
+        getParameters();
+        connect(serverName, serverPort);
 
+    }
+
+    private void DisplayTimerView()
+    {
+        lblTimer = LibraryComponents.LocateAJLabel(this,springLayout,"Time Allowed:", 500, 370);
+        lblTimerNumber = LibraryComponents.LocateAJLabel(this,springLayout,"30", 600, 350);
+        lblTimerNumber.setFont(lblTimer.getFont().deriveFont(40f));
+        btnIncreaseTimer = LibraryComponents.LocateAJButton(this, this, springLayout, "Increase", 670, 350,commonButtonWidth,commonButtonHeight);
+        btnDecreaseTimer = LibraryComponents.LocateAJButton(this, this, springLayout, "Decrease", 670, 350 + commonButtonHeight ,commonButtonWidth,commonButtonHeight);
+    }
+
+    private void addToBinaryTree()
+    {
+        for (SurveyQuestionData item :
+                SurveyDataGlobal)
+        {
+            theTree.addBtNode(item.getQuestionInt(), item.getTopic());
+        }
     }
 
     /**
@@ -252,6 +293,8 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         int currentXOffset = 10;
         lblBinaryTree = LibraryComponents.LocateAJLabel(this, layout, "Binary Tree", currentXOffset, loadHeight - 15);
         txtLBinaryTree = LibraryComponents.LocateAJTextArea(this,layout,currentXOffset,loadHeight,5,69);
+        txtLBinaryTree.setLineWrap(true);
+        txtLBinaryTree.setWrapStyleWord(true);
         currentXOffset +=650;
         btnDisplayBinaryTree = LibraryComponents.LocateAJButton(this,this,layout, "Display", currentXOffset, loadHeight - commonButtonHeight, commonButtonWidth, commonButtonHeight);
     }
@@ -268,19 +311,19 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         lblPreOrder = LibraryComponents.LocateAJLabel(this, layout, "Pre-Order",currentXOffset+10, loadHeight - commonButtonHeight);
         btnPreOrderDisplay = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset +=commonButtonWidth;
-        btnPreOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
+        btnPreOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Save", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += 190;
         //In order section
         lblInOrder = LibraryComponents.LocateAJLabel(this, layout, "In-Order",currentXOffset+10, loadHeight - commonButtonHeight);
         btnInOrderDisplay = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset +=commonButtonWidth;
-        btnInOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
+        btnInOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Save", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset += 190;
         //Post order section
         lblPostOrder = LibraryComponents.LocateAJLabel(this, layout, "Post-Order",currentXOffset+10, loadHeight - commonButtonHeight);
         btnPostOrderDisplay = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset +=commonButtonWidth;
-        btnPostOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
+        btnPostOrderSave = LibraryComponents.LocateAJButton(this,this,layout,"Save", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
     }
 
 
@@ -334,7 +377,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     @Override
     public void actionPerformed(ActionEvent e)
     {
-        if (e.getSource() == btnSend)
+        if (e.getSource() == btnSend && !timerLocked)
         {
             DList dList = new DList();
             for (SurveyQuestionData var: SurveyDataGlobal)
@@ -343,6 +386,9 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             }
             String Display = dList.toString();
             txtLinkedList.append(Display);
+            timerLocked = true;
+            send();
+
         }
 
         if (e.getSource() == btnSortNumber)
@@ -382,6 +428,38 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
         }
 
+        if (e.getSource() == btnInOrderDisplay)
+        {
+            theTree.output = "In Order: ";
+            theTree.inOrderTraverseTree(theTree.root);
+            txtLBinaryTree.setText(theTree.output);
+
+        }
+        if (e.getSource() == btnPreOrderDisplay)
+        {
+            theTree.output = "Pre Order: ";
+            theTree.preorderTraverseTree(theTree.root);
+            txtLBinaryTree.setText(theTree.output);
+
+        }
+        if (e.getSource() == btnPostOrderDisplay)
+        {
+            theTree.output = "Post Order: ";
+            theTree.postOrderTraverseTree(theTree.root);
+            txtLBinaryTree.setText(theTree.output);
+
+        }
+        if (e.getSource() == btnIncreaseTimer && !timerLocked)
+        {
+            Timer++;
+            lblTimerNumber.setText(String.valueOf(Timer));
+        }
+        if (e.getSource() == btnDecreaseTimer && !timerLocked)
+        {
+            Timer--;
+            lblTimerNumber.setText(String.valueOf(Timer));
+        }
+
 
 
     }
@@ -409,14 +487,14 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         if (e.getSource() == questionsTable)
         {
-            int selected = questionsTable.getSelectedRow();
-            txtDetailQuestion.setText(SurveyDataGlobal[selected].getQuestionBody());
-            txtDetailTopic.setText(SurveyDataGlobal[selected].getTopic());
-            txtDetailA.setText(SurveyDataGlobal[selected].getAnswerA());
-            txtDetailB.setText(SurveyDataGlobal[selected].getAnswerB());
-            txtDetailC.setText(SurveyDataGlobal[selected].getAnswerC());
-            txtDetailD.setText(SurveyDataGlobal[selected].getAnswerD());
-            txtDetailE.setText(SurveyDataGlobal[selected].getAnswerE());
+            selectedSurvey = questionsTable.getSelectedRow();
+            txtDetailQuestion.setText(SurveyDataGlobal[selectedSurvey].getQuestionBody());
+            txtDetailTopic.setText(SurveyDataGlobal[selectedSurvey].getTopic());
+            txtDetailA.setText(SurveyDataGlobal[selectedSurvey].getAnswerA());
+            txtDetailB.setText(SurveyDataGlobal[selectedSurvey].getAnswerB());
+            txtDetailC.setText(SurveyDataGlobal[selectedSurvey].getAnswerC());
+            txtDetailD.setText(SurveyDataGlobal[selectedSurvey].getAnswerD());
+            txtDetailE.setText(SurveyDataGlobal[selectedSurvey].getAnswerE());
         }
 
     }
@@ -444,4 +522,122 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
 
     }
+
+    public void close()
+    {
+    }
+
+    public void getParameters()
+    {
+//        serverName = getParameter("host");
+//        serverPort = Integer.parseInt(getParameter("port"));
+
+        serverName = "localhost";
+        serverPort = 4444;
+    }
+
+    private void send()
+    {
+        try
+        {
+            streamOut.writeUTF("0;" + PackageData(SurveyDataGlobal[selectedSurvey]) + Timer);
+            streamOut.flush();
+            txtDetailTopic.setText("");
+        }
+        catch (IOException ioe)
+        {
+            txtDetailTopic.setText("Sending error: " + ioe.getMessage());
+            close();
+        }
+    }
+
+    public void handle(String sent)
+    {
+        if (sent.equals(".bye"))
+        {
+            txtDetailQuestion.setText("Good bye. Press EXIT button to exit ...");
+            close();
+        }
+        else
+        {
+            System.out.println("Handle: " + sent);
+            txtDetailQuestion.setText(sent);
+            DisplayTimer(Timer);
+        }
+    }
+
+    public void connect(String serverName, int serverPort)
+    {
+        txtDetailA.setText("Establishing connection. Please wait ...");
+        try
+        {
+            socket = new Socket(serverName, serverPort);
+            txtDetailA.setText("Connected: " + socket);
+            open();
+        }
+        catch (UnknownHostException uhe)
+        {
+            txtDetailA.setText("Host unknown: " + uhe.getMessage());
+        }
+        catch (IOException ioe)
+        {
+            txtDetailA.setText("Unexpected exception: " + ioe.getMessage());
+        }
+    }
+    public void open()
+    {
+        try
+        {
+            streamOut = new DataOutputStream(socket.getOutputStream());
+            client1 = new ChatClientThread1(this, socket);
+        }
+        catch (IOException ioe)
+        {
+            txtDetailB.setText("Error opening output stream: " + ioe);
+        }
+    }
+    public String PackageData (SurveyQuestionData sentData)
+    {
+        String toSend = "";
+        toSend += sentData.getQuestionInt() + ";";
+        toSend += sentData.getTopic() + ";";
+        toSend += sentData.getQuestionBody() + ";";
+        toSend += sentData.getAnswerA() + ";";
+        toSend += sentData.getAnswerB() + ";";
+        toSend += sentData.getAnswerC() + ";";
+        toSend += sentData.getAnswerD() + ";";
+        toSend += sentData.getAnswerE() + ";";
+
+        return toSend;
+    }
+
+    private void DisplayTimer(int sentTime)
+    {
+
+        TimerMemory = Timer;
+        lblTimerNumber.setForeground(Color.BLUE);
+        startTime = System.currentTimeMillis();
+        while(true)
+        {
+
+            elapsedTime = System.currentTimeMillis() - startTime;
+            elapsedSeconds = elapsedTime / 1000;
+            secondsDisplay = elapsedSeconds % 60;
+            lblTimerNumber.setText("" + (sentTime - secondsDisplay));
+            if (secondsDisplay > (sentTime - 11))
+            {
+                lblTimerNumber.setForeground(Color.RED);
+            }
+            if (secondsDisplay > sentTime)
+            {
+                lblTimerNumber.setForeground(Color.BLACK);
+                timerLocked = false;
+                Timer = TimerMemory;
+                lblTimerNumber.setText(Integer.toString(Timer));
+                break;
+            }
+        }
+
+    }
+
 }
