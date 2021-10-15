@@ -45,8 +45,8 @@ Mark's Comments (21/8/2021):
  */
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
-    String version = "v 0.01";
-    int commonButtonHeight = 30, commonButtonWidth = 100, selectedSurvey = 0, Timer = 30, TimerMemory;
+    String version = "v 0.10";
+    int commonButtonHeight = 30, commonButtonWidth = 100, selectedSurvey = 0, Timer = 30, timerMemory, responseCount = 0, responseTotal = 0;
     JButton btnSortNumber, btnSortTopic, btnSortQuestion, btnExit, btnSend, btnDisplayBinaryTree,
             btnPreOrderDisplay, btnPreOrderSave, btnInOrderDisplay, btnInOrderSave, btnPostOrderDisplay,
             btnPostOrderSave, btnIncreaseTimer, btnDecreaseTimer;
@@ -64,6 +64,9 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     SpringLayout springLayout;
     Object[][] dataValues;
     BinaryTree theTree;
+
+    //This stores our linked list data as we add it
+    DList mainLinkedList;
 
     //Chat elements
     private Socket socket = null;
@@ -379,13 +382,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         if (e.getSource() == btnSend && !timerLocked)
         {
-            DList dList = new DList();
-            for (SurveyQuestionData var: SurveyDataGlobal)
-            {
-                dList.head.append(new Node(var.getTopic().toString() + "  -->  "));
-            }
-            String Display = dList.toString();
-            txtLinkedList.append(Display);
+//            DList dList = new DList();
+//            for (SurveyQuestionData var: SurveyDataGlobal)
+//            {
+//                dList.head.append(new Node(var.getTopic().toString() + "  -->  "));
+//            }
+//            String Display = dList.toString();
+//            txtLinkedList.append(Display);
             timerLocked = true;
             send();
 
@@ -560,10 +563,25 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         }
         else
         {
-            System.out.println("Handle: " + sent);
-            txtDetailQuestion.setText(sent);
-            DisplayTimer(Timer);
+            if (sent.startsWith("1"))
+            {
+                String[] temp = sent.split(";");
+                //take answer number
+                responseTotal += Integer.parseInt(temp[1]);
+                //increment answer count
+                responseCount++;
+                if(mainLinkedList == null)
+                {
+
+                }
+
+            }
         }
+    }
+
+    public void unpack()
+    {
+
     }
 
     public void connect(String serverName, int serverPort)
@@ -614,7 +632,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     private void DisplayTimer(int sentTime)
     {
 
-        TimerMemory = Timer;
+        timerMemory = Timer;
         lblTimerNumber.setForeground(Color.BLUE);
         startTime = System.currentTimeMillis();
         while(true)
@@ -632,7 +650,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             {
                 lblTimerNumber.setForeground(Color.BLACK);
                 timerLocked = false;
-                Timer = TimerMemory;
+                Timer = timerMemory;
                 lblTimerNumber.setText(Integer.toString(Timer));
                 break;
             }
