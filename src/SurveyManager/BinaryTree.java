@@ -1,10 +1,16 @@
+
 package SurveyManager;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class BinaryTree
 {
 
     BtNode root;
     String output;
+    HashMap<String, String> outputHash = new HashMap<>();
 
     public void addBtNode(int key, String name)
     {
@@ -104,6 +110,7 @@ public class BinaryTree
 
             //System.out.println(focusBtNode);
             output = output + " " + focusBtNode.key + "-" + focusBtNode.name + ",";
+            outputHash.put(String.valueOf(focusBtNode.key), focusBtNode.name);
 
             // Traverse the right BtNode
 
@@ -141,10 +148,44 @@ public class BinaryTree
 
             //System.out.println(focusBtNode);
             output = output + " " + focusBtNode.key + "-" + focusBtNode.name + ",";
-
         }
-
     }
+
+    public int getFullCount()
+    {
+        // If tree is empty
+        if (root==null)
+            return 0;
+
+        // Initialize empty queue.
+        Queue<BtNode> queue = new LinkedList<BtNode>();
+
+        // Do level order traversal starting from root
+        queue.add(root);
+
+        int count=0; // Initialize count of full nodes
+        while (!queue.isEmpty())
+        {
+
+            BtNode temp = queue.poll();
+            if (temp.leftChild!=null && temp.rightChild!=null)
+                count++;
+
+            // Enqueue left child
+            if (temp.leftChild != null)
+            {
+                queue.add(temp.leftChild);
+            }
+
+            // Enqueue right child
+            if (temp.rightChild != null)
+            {
+                queue.add(temp.rightChild);
+            }
+        }
+        return count;
+    }
+
 
     public BtNode findBtNode(int key) {
 

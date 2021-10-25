@@ -7,8 +7,11 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import javax.swing.*;
-import javax.swing.text.StyledEditorKit;
+
+import static org.apache.commons.io.FileUtils.byteCountToDisplaySize;
+import static org.apache.commons.io.FileUtils.sizeOf;
 
 
 
@@ -45,8 +48,13 @@ Mark's Comments (21/8/2021):
  */
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
-    String version = "v 0.10";
-    int commonButtonHeight = 30, commonButtonWidth = 100, selectedSurvey = 0, Timer = 30, timerMemory, responseCount = 0, responseTotal = 0;
+    //Global strings
+    String version = "v 0.20";
+    String linkedTemp = "";
+
+
+    //Main window UI elements
+    int commonButtonHeight = 30, commonButtonWidth = 100, selectedSurvey = 0, Timer = 5, timerMemory;
     JButton btnSortNumber, btnSortTopic, btnSortQuestion, btnExit, btnSend, btnDisplayBinaryTree,
             btnPreOrderDisplay, btnPreOrderSave, btnInOrderDisplay, btnInOrderSave, btnPostOrderDisplay,
             btnPostOrderSave, btnIncreaseTimer, btnDecreaseTimer;
@@ -54,27 +62,34 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     lblDetailQuestion, lblDetailTopic, lblDetailA, lblDetailB, lblDetailC, lblDetailD, lblDetailE;
     JTextArea txtLinkedList, txtLBinaryTree;
     JTextField txtDetailTopic, txtDetailQuestion, txtDetailA, txtDetailB, txtDetailC, txtDetailD, txtDetailE;
-    JTable tblQuestions;
-    File loadFile = new File("SampleData.txt");
-    SurveyQuestionData[] SurveyDataGlobal;
-
     JTable questionsTable;
-    MyModel wordModel;
     SurveyModel surveyModel;
     SpringLayout springLayout;
+
+    //Sub window UI elements
+    List<JLabel>  nodeLabels = new ArrayList<JLabel>();
+
+    //File management
+    File loadFile = new File("SampleData.txt");
+    File inOrderOutput = new File("InOrderOutput.txt");
+    File preOrderOutput = new File("PreOrderOutput.txt");
+    File postOrderOutput = new File("PostOrderOutput.txt");
+    SurveyQuestionData[] SurveyDataGlobal;
     Object[][] dataValues;
+
+
+    //Linked list and binary tree
+    DList mainLinkedList;
     BinaryTree theTree;
 
-    //This stores our linked list data as we add it
-    DList mainLinkedList;
-
-    //Chat elements
+    //Communication elements
     private Socket socket = null;
     private DataInputStream console = null;
     private DataOutputStream streamOut = null;
     private ChatClientThread1 client1 = null;
     private String serverName = "localhost";
     private int serverPort = 4444;
+    float responseCount = 0, responseTotal = 0;
 
     //Timer Elements
     Long startTime, elapsedTime, elapsedSeconds, secondsDisplay;
@@ -102,7 +117,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         readFromFile(loadFile);
         theTree = new BinaryTree();
 
-        addToBinaryTree();
+        //addToBinaryTree();
         //SurveyDataGlobal = CustomSort.BubbleSortAsc(SurveyDataGlobal);
         addWindowListener(new WindowAdapter()
         {
@@ -118,13 +133,80 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         setVisible(true);
         getParameters();
         connect(serverName, serverPort);
+    }
+    public void runTreeWindow (BinaryTree sentTree)
+    {
+        setBounds(50,50, 1000, 800);
+        setTitle("Now Viewing the binary tree");
+        addWindowListener(new WindowAdapter() { });
+        SpringLayout subSpring = new SpringLayout() ;
+        setLayout(subSpring);
+        setResizable(false);
+        setVisible(true);
+        int xPointer = 500;
+        int yPointer = 100;
+        int pointerMemory = xPointer;
+        BtNode currentNode, lastNode;
+        //check if tree is empty
+//        if (sentTree.root != null)
+//        {
+//            currentNode = sentTree.root;
+//            lastNode = currentNode;
+//            nodeLabels.add(new JLabel());
+//            JLabel temp = nodeLabels.get(0);
+//            temp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(sentTree.roost.key), xPointer, yPointer);
+//            while (currentNode != null)
+//            {
+//                //counting amount of labels
+//                int labelcount = 1;
+//                //move Y pointer down one level
+//                yPointer += 50;
+//                //set pointer memory to current node
+//                pointerMemory = xPointer;
+//                if (currentNode.leftChild != null)
+//                {
+//                    lastNode = currentNode;
+//                    currentNode= currentNode.leftChild;
+//                    xPointer = pointerMemory - 50;
+//                    nodeLabels.add(new JLabel());
+//                    JLabel nodeTemp = nodeLabels.get(labelcount);
+//                    nodeTemp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(currentNode.key), xPointer, yPointer);
+//                    labelcount++;
+//                }
+//                if (currentNode.rightChild != null)
+//                {
+//                    currentNode = lastNode;
+//                    currentNode = currentNode.rightChild;
+//                    xPointer = pointerMemory + 50;
+//                    nodeLabels.add(new JLabel());
+//                    JLabel nodeTemp = nodeLabels.get(labelcount);
+//                    nodeTemp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(currentNode.key), xPointer, yPointer);
+//                    labelcount++;
+//                }
+//                currentNode = null;
+//
+//            }
+    }
+
+    public void postOrderTraverseTree(BtNode focusBtNode) {
+
+        if (focusBtNode != null) {
+
+            postOrderTraverseTree(focusBtNode.leftChild);
+            postOrderTraverseTree(focusBtNode.rightChild);
+
+
+        }
 
     }
+
+
+
 
     private void DisplayTimerView()
     {
         lblTimer = LibraryComponents.LocateAJLabel(this,springLayout,"Time Allowed:", 500, 370);
-        lblTimerNumber = LibraryComponents.LocateAJLabel(this,springLayout,"30", 600, 350);
+        lblTimerNumber = LibraryComponents.LocateAJLabel(this,springLayout,String.valueOf(Timer), 600, 350);
         lblTimerNumber.setFont(lblTimer.getFont().deriveFont(40f));
         btnIncreaseTimer = LibraryComponents.LocateAJButton(this, this, springLayout, "Increase", 670, 350,commonButtonWidth,commonButtonHeight);
         btnDecreaseTimer = LibraryComponents.LocateAJButton(this, this, springLayout, "Decrease", 670, 350 + commonButtonHeight ,commonButtonWidth,commonButtonHeight);
@@ -152,6 +234,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         loadOrderDisplaySection(springLayout, 800);
         loadTable(springLayout);
         loadDetailView(springLayout, 30);
+        UpdateTableDetailView();
     }
 
     private void loadDetailView(SpringLayout layout, int loadHeight)
@@ -250,6 +333,9 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         myPanelLayout.putConstraint(SpringLayout.WEST, topPanel, 10, SpringLayout.WEST, this);
         myPanelLayout.putConstraint(SpringLayout.NORTH, topPanel, 10, SpringLayout.NORTH, this);
         questionsTable.addMouseListener(this);
+        questionsTable.setSelectionBackground(Color.BLUE);
+        questionsTable.setSelectionForeground(Color.WHITE);
+
     }
 
     /**
@@ -282,6 +368,8 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         int currentXOffset = 10;
         lblLinkedList = LibraryComponents.LocateAJLabel(this, layout, "Linked List", currentXOffset, loadHeight-15);
         txtLinkedList = LibraryComponents.LocateAJTextArea(this,layout,currentXOffset,loadHeight,5,69);
+        txtLinkedList.setLineWrap(true);
+        txtLinkedList.setWrapStyleWord(true);
 
     }
 
@@ -431,6 +519,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
         }
 
+        if (e.getSource() == btnDisplayBinaryTree)
+        {
+            ManagerWindow subWindow = new ManagerWindow();
+            subWindow.runTreeWindow(theTree);
+
+        }
+
         if (e.getSource() == btnInOrderDisplay)
         {
             theTree.output = "In Order: ";
@@ -452,12 +547,67 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             txtLBinaryTree.setText(theTree.output);
 
         }
-        if (e.getSource() == btnIncreaseTimer && !timerLocked)
+
+        if (e.getSource() == btnInOrderSave)
+        {
+            theTree.output = "In Order: ";
+            theTree.inOrderTraverseTree(theTree.root);
+
+            try
+            {
+                BufferedWriter outFile = new BufferedWriter(new FileWriter(inOrderOutput));
+                outFile.write(theTree.outputHash.toString());
+                outFile.newLine();
+                txtLBinaryTree.setText(theTree.output + " Saved to: " + " File size: " +  byteCountToDisplaySize(sizeOf(inOrderOutput)));
+                outFile.close();
+            } catch (IOException ex)
+            {
+                System.err.println("Error: " + ex.getMessage());
+            }
+
+        }
+        if (e.getSource() == btnPreOrderSave)
+        {
+            theTree.output = "Pre Order: ";
+            theTree.preorderTraverseTree(theTree.root);
+
+            try
+            {
+                BufferedWriter outFile = new BufferedWriter(new FileWriter(preOrderOutput));
+                outFile.write(theTree.outputHash.toString());
+                outFile.newLine();
+                txtLBinaryTree.setText(theTree.output + " File size: " +  byteCountToDisplaySize(sizeOf(preOrderOutput)));
+                outFile.close();
+            } catch (IOException ex)
+            {
+                System.err.println("Error: " + ex.getMessage());
+            }
+        }
+        if (e.getSource() == btnPostOrderSave)
+        {
+            theTree.output = "Post Order: ";
+            theTree.postOrderTraverseTree(theTree.root);
+            try
+            {
+                BufferedWriter outFile = new BufferedWriter(new FileWriter(postOrderOutput));
+                outFile.write(theTree.outputHash.toString());
+                outFile.newLine();
+
+                //Showing the size of the file using the third party library org.apache.commons.io
+                txtLBinaryTree.setText(theTree.output + " File size: " +  byteCountToDisplaySize(sizeOf(postOrderOutput)));
+                outFile.close();
+            } catch (IOException ex)
+            {
+                System.err.println("Error: " + ex.getMessage());
+            }
+
+        }
+        if (e.getSource() == btnIncreaseTimer && !timerLocked )
         {
             Timer++;
             lblTimerNumber.setText(String.valueOf(Timer));
         }
-        if (e.getSource() == btnDecreaseTimer && !timerLocked)
+        if (e.getSource() == btnDecreaseTimer && !timerLocked && Timer > 1)
         {
             Timer--;
             lblTimerNumber.setText(String.valueOf(Timer));
@@ -490,14 +640,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         if (e.getSource() == questionsTable)
         {
-            selectedSurvey = questionsTable.getSelectedRow();
-            txtDetailQuestion.setText(SurveyDataGlobal[selectedSurvey].getQuestionBody());
-            txtDetailTopic.setText(SurveyDataGlobal[selectedSurvey].getTopic());
-            txtDetailA.setText(SurveyDataGlobal[selectedSurvey].getAnswerA());
-            txtDetailB.setText(SurveyDataGlobal[selectedSurvey].getAnswerB());
-            txtDetailC.setText(SurveyDataGlobal[selectedSurvey].getAnswerC());
-            txtDetailD.setText(SurveyDataGlobal[selectedSurvey].getAnswerD());
-            txtDetailE.setText(SurveyDataGlobal[selectedSurvey].getAnswerE());
+            UpdateTableDetailView();
         }
 
     }
@@ -530,6 +673,24 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
     }
 
+    public void UpdateTableDetailView()
+    {
+        selectedSurvey = questionsTable.getSelectedRow();
+        //returning no selected row as negative one causes errors
+        if (selectedSurvey < 1)
+        {
+            selectedSurvey = 1;
+        }
+
+        txtDetailQuestion.setText(SurveyDataGlobal[selectedSurvey].getQuestionBody());
+        txtDetailTopic.setText(SurveyDataGlobal[selectedSurvey].getTopic());
+        txtDetailA.setText(SurveyDataGlobal[selectedSurvey].getAnswerA());
+        txtDetailB.setText(SurveyDataGlobal[selectedSurvey].getAnswerB());
+        txtDetailC.setText(SurveyDataGlobal[selectedSurvey].getAnswerC());
+        txtDetailD.setText(SurveyDataGlobal[selectedSurvey].getAnswerD());
+        txtDetailE.setText(SurveyDataGlobal[selectedSurvey].getAnswerE());
+    }
+
     public void getParameters()
     {
 //        serverName = getParameter("host");
@@ -543,9 +704,15 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         try
         {
+
             streamOut.writeUTF("0;" + PackageData(SurveyDataGlobal[selectedSurvey]) + Timer);
             streamOut.flush();
             txtDetailTopic.setText("");
+            linkedTemp = SurveyDataGlobal[selectedSurvey].getTopic() + ", Qn" + SurveyDataGlobal[selectedSurvey].getQuestionInt();
+            theTree.addBtNode(SurveyDataGlobal[selectedSurvey].getQuestionInt(), SurveyDataGlobal[selectedSurvey].getTopic());
+            new Thread(() -> {
+                DisplayTimer(Timer);
+            }).start();
         }
         catch (IOException ioe)
         {
@@ -570,11 +737,6 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 responseTotal += Integer.parseInt(temp[1]);
                 //increment answer count
                 responseCount++;
-                if(mainLinkedList == null)
-                {
-
-                }
-
             }
         }
     }
@@ -590,7 +752,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         try
         {
             socket = new Socket(serverName, serverPort);
-            txtDetailA.setText("Connected: " + socket);
+            //txtDetailA.setText("Connected: " + socket);
             open();
         }
         catch (UnknownHostException uhe)
@@ -635,6 +797,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         timerMemory = Timer;
         lblTimerNumber.setForeground(Color.BLUE);
         startTime = System.currentTimeMillis();
+        timerLocked = true;
         while(true)
         {
 
@@ -652,9 +815,30 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 timerLocked = false;
                 Timer = timerMemory;
                 lblTimerNumber.setText(Integer.toString(Timer));
+                BuildListEntry();
                 break;
             }
         }
+    }
+
+    private void BuildListEntry ()
+    {
+        if (mainLinkedList == null)
+        {
+            mainLinkedList = new DList();
+        }
+        if (responseCount == 0)
+        {
+            mainLinkedList.head.append(new Node(linkedTemp+ " No responses <----->  "));
+        }
+        else
+        {
+            responseCount = responseTotal/responseCount;
+            mainLinkedList.head.append(new Node(linkedTemp + ",  " + responseCount + " <----->  "));
+        }
+        responseCount = 0;
+        responseTotal = 0;
+        txtLinkedList.setText(mainLinkedList.toString());
 
     }
 
