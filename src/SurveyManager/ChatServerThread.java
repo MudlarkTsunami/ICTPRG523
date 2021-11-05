@@ -10,13 +10,13 @@ import java.net.Socket;
 public class ChatServerThread extends Thread
 {
 
-    private ChatServer server = null;
+    private MessageServer server = null;
     private Socket socket = null;
     private int ID = -1;
     private DataInputStream streamIn = null;
     private DataOutputStream streamOut = null;
 
-    public ChatServerThread(ChatServer _server, Socket _socket)
+    public ChatServerThread(MessageServer _server, Socket _socket)
     {
         super();
         server = _server;

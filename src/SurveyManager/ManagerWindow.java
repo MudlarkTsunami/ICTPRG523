@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
 import javax.swing.*;
 
 import static org.apache.commons.io.FileUtils.byteCountToDisplaySize;
@@ -42,7 +41,7 @@ Mark's Comments (21/8/2021):
 /**
  * <H1>ManagerWindow Program</H1>
  * The ManagerWindow program allows the user to open a survey file and
- * send survey questions to the sister ClientWindow program
+ * send survey questions to the sister ClientWindow program via the
  * @author Hayden Baker
  * @version 0.01
  */
@@ -70,9 +69,6 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     SurveyModel surveyModel;
     SpringLayout springLayout;
 
-    //Sub window UI elements
-    List<JLabel>  nodeLabels = new ArrayList<JLabel>();
-
     //File management
     File loadFile = new File("SampleData.txt");
     File inOrderOutput = new File("InOrderOutput.txt");
@@ -88,9 +84,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     //Communication elements
     private Socket socket = null;
-    private DataInputStream console = null;
     private DataOutputStream streamOut = null;
-    private ChatClientThread1 client1 = null;
     private String serverName = "localhost";
     private int serverPort = 4444;
     float responseCount = 0, responseTotal = 0;
@@ -102,7 +96,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     /**
      * Entry point for application
-     * @param args
+     * @param args Required
      */
     public static void main(String[] args)
     {
@@ -112,17 +106,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
 
     /**
-     * Opens a new ManagerWindow, with no file specified
+     * Opens a new ManagerWindow with the default file
      */
     public void run ()
     {
+        //Window setup
         setBounds(50,50, 800, 1000);
         setTitle("Flawless Feedback    " + version);
-        readFromFile(loadFile);
-        theTree = new BinaryTree();
-
-        //addToBinaryTree();
-        //SurveyDataGlobal = CustomSort.BubbleSortAsc(SurveyDataGlobal);
         addWindowListener(new WindowAdapter()
         {
             @Override
@@ -131,19 +121,32 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 System.exit(0);
             }
         });
-        displayMainGUI();
-        DisplayTimerView();
         setResizable(false);
         setVisible(true);
         getParameters();
+
+
+        //Reading from the default file
+        readFromFile(loadFile);
+        //Instantiating the binary tree
+        theTree = new BinaryTree();
+
+
+        //Display elements
+        displayMainGUI();
+        DisplayTimerView();
+
+        //Connecting to message server
         connect(serverName, serverPort);
     }
 
 
-
-
+    /**
+     * Loads the elements for the survey timer
+     */
     private void DisplayTimerView()
     {
+        //Setting up the different elements of the timer for display and use
         lblTimer = LibraryComponents.LocateAJLabel(this,springLayout,"Time Allowed:", 500, 370);
         lblTimerNumber = LibraryComponents.LocateAJLabel(this,springLayout,String.valueOf(Timer), 600, 350);
         lblTimerNumber.setFont(lblTimer.getFont().deriveFont(40f));
@@ -151,20 +154,12 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         btnDecreaseTimer = LibraryComponents.LocateAJButton(this, this, springLayout, "Decrease", 670, 350 + commonButtonHeight ,commonButtonWidth,commonButtonHeight);
     }
 
-    private void addToBinaryTree()
-    {
-        for (SurveyQuestionData item :
-                SurveyDataGlobal)
-        {
-            theTree.addBtNode(item.getQuestionInt(), item.getTopic());
-        }
-    }
-
     /**
      * Top level command for displaying main window elements
      */
     private void displayMainGUI()
     {
+        //Setting up the different elements for the GUI
         springLayout = new SpringLayout();
         setLayout(springLayout);
         loadTableRowButtons(springLayout, 450);
@@ -176,8 +171,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         UpdateTableDetailView();
     }
 
+    /**
+     * To be opened as a new window that will graphically display a binary tree
+     * @param sentTree Binary tree to be displayed
+     */
     public void displayBinaryTree (BinaryTree sentTree)
     {
+        //Setting up a new window
         setBounds(50, 50, 950, 750);
         setTitle("Now Viewing the binary tree");
         addWindowListener(new WindowAdapter()
@@ -187,12 +187,19 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         setLayout(subSpring);
         setResizable(false);
         setVisible(true);
+        //Text area for displaying binary tree
         JTextArea txtBinaryTreeDisplay;
         txtBinaryTreeDisplay = LibraryComponents.LocateAJTextArea(this, subSpring, 10,10,45,85);
+        //Generating and displaying the binary tree output
         print2D(sentTree.root);
         txtBinaryTreeDisplay.setText(globalOutput);
     }
 
+    /**
+     * Loads labels and text fields for the question details area
+     * @param layout SpringLayout
+     * @param loadHeight Desired top of load height at runtime
+     */
     private void loadDetailView(SpringLayout layout, int loadHeight)
     {
         int loadWidthLabel = 380, loadWidthText = 440;
@@ -219,39 +226,19 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     }
 
-
-    //Temporary Method for updating dataValues for testing purposes
-    public void updateModel ()
-    {
-        SurveyModel temp;
-        String columnNames[] =
-                { "Number", "Topic", "Question"};
-
-        dataValues = new Object[SurveyDataGlobal.length][columnNames.length];
-        for (int i = 0; i<SurveyDataGlobal.length ; i++)
-        {
-            dataValues[i][0] = "TEST";
-            dataValues[i][1] = "TEST";
-            dataValues[i][2] = "TEST";
-        }
-        temp = new SurveyModel(columnNames,dataValues);
-        surveyModel = temp;
-    }
-
-
     /**
      * Method for showing the table the application on the UI
-     * @param myPanelLayout
+     * @param myPanelLayout SpringLayout
      */
     public void loadTable(SpringLayout myPanelLayout)
     {
-        // Create a panel to hold all other components
+        // Create a panel to hold all components
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
         add(topPanel);
 
         // Create column names
-        String columnNames[] =
+        String[] columnNames =
                 { "Number", "Topic", "Question"};
 
         // Create some data
@@ -283,7 +270,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         questionsTable.setSelectionBackground(Color.red);
 
         // Add the table to a scrolling pane, size and locate
-        JScrollPane scrollPane = questionsTable.createScrollPaneForTable(questionsTable);
+        JScrollPane scrollPane = JTable.createScrollPaneForTable(questionsTable);
         topPanel.add(scrollPane, BorderLayout.CENTER);
         topPanel.setPreferredSize(new Dimension(350, 400));
         myPanelLayout.putConstraint(SpringLayout.WEST, topPanel, 10, SpringLayout.WEST, this);
@@ -296,7 +283,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     /**
      * Method for loading the buttons below the table element
-     * @param layout
+     * @param layout SpringLayout
      * @param loadHeight Desired top of load height at runtime
      */
     private void loadTableRowButtons(SpringLayout layout, int loadHeight)
@@ -316,8 +303,8 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     /**
      * Loading the linked list display area in the UI
-     * @param layout Desired top of load height at runtime
-     * @param loadHeight
+     * @param layout SpringLayout
+     * @param loadHeight Desired top of load height at runtime
      */
     private void loadLinkedListSection(SpringLayout layout, int loadHeight)
     {
@@ -326,13 +313,12 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         txtLinkedList = LibraryComponents.LocateAJTextArea(this,layout,currentXOffset,loadHeight,5,69);
         txtLinkedList.setLineWrap(true);
         txtLinkedList.setWrapStyleWord(true);
-
     }
 
 
     /**
      * Loading the binary tree display area in the UI
-     * @param layout
+     * @param layout SpringLayout
      * @param loadHeight Desired top of load height at runtime
      */
     private void loadBinaryTreeSection(SpringLayout layout, int loadHeight)
@@ -348,13 +334,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     /**
      * Loading the order display area in the UI
-     * @param layout
+     * @param layout SpringLayout
      * @param loadHeight Desired top of load height at runtime
      */
     private void loadOrderDisplaySection (SpringLayout layout, int loadHeight)
     {
         int currentXOffset= 10;
-        //Pre order section
+        //Pre-order section
         lblPreOrder = LibraryComponents.LocateAJLabel(this, layout, "Pre-Order",currentXOffset+10, loadHeight - commonButtonHeight);
         btnPreOrderDisplay = LibraryComponents.LocateAJButton(this,this,layout,"Display", currentXOffset,loadHeight,commonButtonWidth,commonButtonHeight);
         currentXOffset +=commonButtonWidth;
@@ -387,16 +373,19 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             //takes a count of lines in the sample data
             int totalLines = 0;
             String readingLine;
-            List<String> readData = new ArrayList<String>();
+            List<String> readData = new ArrayList<>();
             while ((readingLine = br.readLine() )!= null)
             {
                 totalLines++;
                 readData.add(readingLine);
             }
+
             //correcting for files that aren't multiples of 8
             totalLines = totalLines - (totalLines%8);
+
             //How many sets of survey questions to create
             int runNumber = (totalLines / 8) - 1;
+
             //reading data into data class
             SurveyDataGlobal = new SurveyQuestionData[runNumber];
             for (int i  = 1; i <= runNumber; i++)
@@ -411,7 +400,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
                 temp.setAnswerC(readData.get(currentLine++));
                 temp.setAnswerD(readData.get(currentLine++));
                 temp.setAnswerE(readData.get(currentLine));
-                //i must be adjusted here to account for set of junk lines at top of file
+                //'i' must be adjusted here to account for set of junk lines at top of file
                 SurveyDataGlobal[i -1] = temp;
             }
         }
@@ -426,61 +415,34 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
         if (e.getSource() == btnSend && !timerLocked)
         {
-//            DList dList = new DList();
-//            for (SurveyQuestionData var: SurveyDataGlobal)
-//            {
-//                dList.head.append(new Node(var.getTopic().toString() + "  -->  "));
-//            }
-//            String Display = dList.toString();
-//            txtLinkedList.append(Display);
+            //The timer is locked for countdown when the user sends out
             timerLocked = true;
             send();
-
         }
 
         if (e.getSource() == btnSortNumber)
         {
             CustomSort.BubbleSort(SurveyDataGlobal);
-            for (int i = 0; i<SurveyDataGlobal.length ; i++)
-            {
-                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
-                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
-                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
-            }
-            surveyModel.fireTableDataChanged();
+            SortingLoop();
         }
+
         if (e.getSource() == btnSortQuestion)
         {
             CustomSort.SelectionSort(SurveyDataGlobal);
-            for (int i = 0; i<SurveyDataGlobal.length ; i++)
-            {
-                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
-                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
-                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
-            }
-            surveyModel.fireTableDataChanged();
-
+            SortingLoop();
         }
 
         if (e.getSource() == btnSortTopic)
         {
             CustomSort.InsertionSort(SurveyDataGlobal);
-            for (int i = 0; i<SurveyDataGlobal.length ; i++)
-            {
-                dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
-                dataValues[i][1] = SurveyDataGlobal[i].getTopic();
-                dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
-            }
-            surveyModel.fireTableDataChanged();
-
+            SortingLoop();
         }
 
         if (e.getSource() == btnDisplayBinaryTree)
         {
+            //Opens a new window to display the binary tree graphically
             ManagerWindow subWindow = new ManagerWindow();
             subWindow.displayBinaryTree(theTree);
-
-
         }
 
         if (e.getSource() == btnInOrderDisplay)
@@ -488,92 +450,88 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             theTree.output = "In Order: ";
             theTree.inOrderTraverseTree(theTree.root);
             txtLBinaryTree.setText(theTree.output);
-
         }
         if (e.getSource() == btnPreOrderDisplay)
         {
             theTree.output = "Pre Order: ";
             theTree.preorderTraverseTree(theTree.root);
             txtLBinaryTree.setText(theTree.output);
-
         }
         if (e.getSource() == btnPostOrderDisplay)
         {
             theTree.output = "Post Order: ";
             theTree.postOrderTraverseTree(theTree.root);
             txtLBinaryTree.setText(theTree.output);
-
         }
 
         if (e.getSource() == btnInOrderSave)
         {
             theTree.output = "In Order: ";
             theTree.inOrderTraverseTree(theTree.root);
-
-            try
-            {
-                BufferedWriter outFile = new BufferedWriter(new FileWriter(inOrderOutput));
-                outFile.write(theTree.outputHash.toString());
-                outFile.newLine();
-                txtLBinaryTree.setText(theTree.output + " Saved to: " + " File size: " +  byteCountToDisplaySize(sizeOf(inOrderOutput)));
-                outFile.close();
-            } catch (IOException ex)
-            {
-                System.err.println("Error: " + ex.getMessage());
-            }
-
+            SaveFile(inOrderOutput);
         }
+
         if (e.getSource() == btnPreOrderSave)
         {
             theTree.output = "Pre Order: ";
             theTree.preorderTraverseTree(theTree.root);
-
-            try
-            {
-                BufferedWriter outFile = new BufferedWriter(new FileWriter(preOrderOutput));
-                outFile.write(theTree.outputHash.toString());
-                outFile.newLine();
-                txtLBinaryTree.setText(theTree.output + " File size: " +  byteCountToDisplaySize(sizeOf(preOrderOutput)));
-                outFile.close();
-            } catch (IOException ex)
-            {
-                System.err.println("Error: " + ex.getMessage());
-            }
+            SaveFile(preOrderOutput);
         }
+
         if (e.getSource() == btnPostOrderSave)
         {
             theTree.output = "Post Order: ";
             theTree.postOrderTraverseTree(theTree.root);
-            try
-            {
-                BufferedWriter outFile = new BufferedWriter(new FileWriter(postOrderOutput));
-                outFile.write(theTree.outputHash.toString());
-                outFile.newLine();
-
-                //Showing the size of the file using the third party library org.apache.commons.io
-                txtLBinaryTree.setText(theTree.output + " File size: " +  byteCountToDisplaySize(sizeOf(postOrderOutput)));
-                outFile.close();
-            } catch (IOException ex)
-            {
-                System.err.println("Error: " + ex.getMessage());
-            }
-
+            SaveFile(postOrderOutput);
         }
+
         if (e.getSource() == btnIncreaseTimer && !timerLocked )
         {
+            //Increasing timer if it is not running
             Timer++;
             lblTimerNumber.setText(String.valueOf(Timer));
         }
+
         if (e.getSource() == btnDecreaseTimer && !timerLocked && Timer > 1)
         {
+            //Decreasing timer if it is not running
             Timer--;
             lblTimerNumber.setText(String.valueOf(Timer));
         }
-
-
-
     }
 
+    /**
+     * Method for writing file to disk
+     * @param anyOrderOutput Which file to write to
+     */
+    private void SaveFile(File anyOrderOutput)
+    {
+        try
+        {
+            BufferedWriter outFile = new BufferedWriter(new FileWriter(anyOrderOutput));
+            outFile.write(theTree.outputHash.toString());
+            outFile.newLine();
+            txtLBinaryTree.setText(theTree.output + " File size: " +  byteCountToDisplaySize(sizeOf(anyOrderOutput)));
+            outFile.close();
+        } catch (IOException ex)
+        {
+            System.err.println("Error: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Loop used to sort SurveyData and update any table changes
+     */
+    private void SortingLoop()
+    {
+        for (int i = 0; i<SurveyDataGlobal.length ; i++)
+        {
+            dataValues[i][0] = Integer.toString(SurveyDataGlobal[i].getQuestionInt());
+            dataValues[i][1] = SurveyDataGlobal[i].getTopic();
+            dataValues[i][2] = SurveyDataGlobal[i].getQuestionBody();
+        }
+        surveyModel.fireTableDataChanged();
+    }
     @Override
     public void keyTyped(KeyEvent e)
     {
@@ -630,6 +588,10 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
     {
     }
 
+
+    /**
+     * Updates the survey being viewed in the detail pane
+     */
     public void UpdateTableDetailView()
     {
         selectedSurvey = questionsTable.getSelectedRow();
@@ -648,28 +610,29 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         txtDetailE.setText(SurveyDataGlobal[selectedSurvey].getAnswerE());
     }
 
+    /**
+     * Setting server name parameters
+     */
     public void getParameters()
     {
-//        serverName = getParameter("host");
-//        serverPort = Integer.parseInt(getParameter("port"));
-
         serverName = "localhost";
         serverPort = 4444;
     }
 
+    /**
+     * Outputting message to message server
+     */
     private void send()
     {
         try
         {
-
+            //0 at beginning of string marks the message as having come from the manager program
             streamOut.writeUTF("0;" + PackageData(SurveyDataGlobal[selectedSurvey]) + Timer);
             streamOut.flush();
             txtDetailTopic.setText("");
             linkedTemp = SurveyDataGlobal[selectedSurvey].getTopic() + ", Qn" + SurveyDataGlobal[selectedSurvey].getQuestionInt();
             theTree.addBtNode(SurveyDataGlobal[selectedSurvey].getQuestionInt(), SurveyDataGlobal[selectedSurvey].getTopic());
-            new Thread(() -> {
-                DisplayTimer(Timer);
-            }).start();
+            new Thread(() -> DisplayTimer(Timer)).start();
         }
         catch (IOException ioe)
         {
@@ -678,6 +641,10 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         }
     }
 
+    /**
+     * Input method for messages from server
+     * @param sent Received message
+     */
     public void handle(String sent)
     {
         System.out.println("Handle: " + sent);
@@ -688,6 +655,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         }
         else
         {
+            //Messages marked with 1 are from the client program
             if (sent.startsWith("1"))
             {
                 String[] temp = sent.split(";");
@@ -699,18 +667,18 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         }
     }
 
-    public void unpack()
-    {
 
-    }
-
+    /**
+     * Connecting to message server
+     * @param serverName Name of server
+     * @param serverPort Port of server
+     */
     public void connect(String serverName, int serverPort)
     {
         txtDetailA.setText("Establishing connection. Please wait ...");
         try
         {
             socket = new Socket(serverName, serverPort);
-            //txtDetailA.setText("Connected: " + socket);
             open();
         }
         catch (UnknownHostException uhe)
@@ -722,18 +690,28 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             txtDetailA.setText("Unexpected exception: " + ioe.getMessage());
         }
     }
+
+    /**
+     * Opening a new connection to message server
+     */
     public void open()
     {
         try
         {
             streamOut = new DataOutputStream(socket.getOutputStream());
-            client1 = new ChatClientThread1(this, socket);
+            new ChatClientThread1(this, socket);
         }
         catch (IOException ioe)
         {
             txtDetailB.setText("Error opening output stream: " + ioe);
         }
     }
+
+    /**
+     * Packages data into single string format to be sent with message server
+     * @param sentData Data to be packaged
+     * @return Returns a string that represents a packaged SurveyQuestionData
+     */
     public String PackageData (SurveyQuestionData sentData)
     {
         String toSend = "";
@@ -749,10 +727,15 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         return toSend;
     }
 
+    /**
+     * Sets timer to run based on the time sent in seconds
+     * @param sentTime Timer value in seconds
+     */
     private void DisplayTimer(int sentTime)
     {
-
+        //Setting timer memory for returning the value after completing the timer
         timerMemory = Timer;
+        //The timer is blue when above 10 seconds and running
         lblTimerNumber.setForeground(Color.BLUE);
         startTime = System.currentTimeMillis();
         timerLocked = true;
@@ -763,45 +746,63 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             elapsedSeconds = elapsedTime / 1000;
             secondsDisplay = elapsedSeconds % 60;
             lblTimerNumber.setText("" + (sentTime - secondsDisplay));
+            //The timer becomes red when it is 10 or below
             if (secondsDisplay > (sentTime - 11))
             {
                 lblTimerNumber.setForeground(Color.RED);
             }
+            //ending the loop when the timer runs to 0
             if (secondsDisplay > sentTime)
             {
                 lblTimerNumber.setForeground(Color.BLACK);
                 timerLocked = false;
+                //Resetting the timer to it's original state
                 Timer = timerMemory;
                 lblTimerNumber.setText(Integer.toString(Timer));
+                //Triggers building a new linked list entry
                 BuildListEntry();
                 break;
             }
         }
     }
 
+    /**
+     * Builds a new linked list entry and appends it to a list
+     */
     private void BuildListEntry ()
     {
+        //If there is no list, create one
         if (mainLinkedList == null)
         {
             mainLinkedList = new DList();
         }
+
+        //if there has been no responses
         if (responseCount == 0)
         {
             mainLinkedList.head.append(new Node(linkedTemp+ " No responses <----->  "));
         }
+
+        //divide total by response and display
         else
         {
             responseCount = responseTotal/responseCount;
             mainLinkedList.head.append(new Node(linkedTemp + ",  " + responseCount + " <----->  "));
         }
+
+        //Resetting counts and totals and displaying linked list values
         responseCount = 0;
         responseTotal = 0;
         txtLinkedList.setText(mainLinkedList.toString());
 
     }
 
-    // Function to print binary tree in 2D
-    // It does reverse inorder traversal
+
+    /**
+     * Prints a binary tree using a reverse inorder traversal
+     * @param root Root of binary tree
+     * @param space Spacing to be used
+     */
     public void print2DUtil(BtNode root, int space)
     {
         // Base case
@@ -823,29 +824,13 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
         // Process left child
         print2DUtil(root.leftChild, space);
-
-//        // Base case
-//        if (root == null)
-//            return;
-//
-//        // Increase distance between levels
-//        space += COUNT;
-//
-//        // Process right child first
-//        print2DUtil(root.rightChild, space, output);
-//
-//        // Print current node after space
-//        // count
-//        System.out.print("\n");
-//        for (int i = COUNT; i < space; i++)
-//            System.out.print(" ");
-//        System.out.print(root.key + "\n");
-//
-//        // Process left child
-//        print2DUtil(root.leftChild, space, output);
     }
 
-    // Wrapper over print2DUtil()
+
+    /**
+     * Wrapper method for print2DUtil
+     * @param root root of a binary tree
+     */
     public void print2D(BtNode root)
     {
         // Pass initial space count as 0

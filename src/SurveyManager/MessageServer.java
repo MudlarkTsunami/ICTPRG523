@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ChatServer implements Runnable
+public class MessageServer implements Runnable
 {
 
     private ChatServerThread clients[] = new ChatServerThread[50];
@@ -17,7 +17,7 @@ public class ChatServer implements Runnable
     private int clientCount = 0;
     
 
-    public ChatServer(int port)
+    public MessageServer(int port)
     {
         try
         {
@@ -148,15 +148,15 @@ public class ChatServer implements Runnable
 
     public static void main(String args[])
     {
-        ChatServer server;
+        MessageServer server;
         if (args.length != 1)
         {
             //System.out.println("Usage: java ChatServer port");
-            server = new ChatServer(4444);
+            server = new MessageServer(4444);
         }
         else
         {
-            server = new ChatServer(Integer.parseInt(args[0]));
+            server = new MessageServer(Integer.parseInt(args[0]));
         }
     }
 
