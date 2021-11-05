@@ -109,4 +109,6 @@ public class LibraryComponents
         myLayout.putConstraint(SpringLayout.NORTH, myJTextArea, y, SpringLayout.NORTH, myJFrame);
         return myJTextArea;
     }
+
+
 }

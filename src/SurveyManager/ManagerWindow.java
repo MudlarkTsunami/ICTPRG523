@@ -49,8 +49,12 @@ Mark's Comments (21/8/2021):
 public class ManagerWindow extends JFrame implements ActionListener, KeyListener, MouseListener
 {
     //Global strings
-    String version = "v 0.20";
+    String version = "v 0.30";
     String linkedTemp = "";
+    String globalOutput = "";
+
+    //Global integers
+    static final int COUNT = 10;
 
 
     //Main window UI elements
@@ -134,71 +138,6 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         getParameters();
         connect(serverName, serverPort);
     }
-    public void runTreeWindow (BinaryTree sentTree)
-    {
-        setBounds(50,50, 1000, 800);
-        setTitle("Now Viewing the binary tree");
-        addWindowListener(new WindowAdapter() { });
-        SpringLayout subSpring = new SpringLayout() ;
-        setLayout(subSpring);
-        setResizable(false);
-        setVisible(true);
-        int xPointer = 500;
-        int yPointer = 100;
-        int pointerMemory = xPointer;
-        BtNode currentNode, lastNode;
-        //check if tree is empty
-//        if (sentTree.root != null)
-//        {
-//            currentNode = sentTree.root;
-//            lastNode = currentNode;
-//            nodeLabels.add(new JLabel());
-//            JLabel temp = nodeLabels.get(0);
-//            temp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(sentTree.roost.key), xPointer, yPointer);
-//            while (currentNode != null)
-//            {
-//                //counting amount of labels
-//                int labelcount = 1;
-//                //move Y pointer down one level
-//                yPointer += 50;
-//                //set pointer memory to current node
-//                pointerMemory = xPointer;
-//                if (currentNode.leftChild != null)
-//                {
-//                    lastNode = currentNode;
-//                    currentNode= currentNode.leftChild;
-//                    xPointer = pointerMemory - 50;
-//                    nodeLabels.add(new JLabel());
-//                    JLabel nodeTemp = nodeLabels.get(labelcount);
-//                    nodeTemp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(currentNode.key), xPointer, yPointer);
-//                    labelcount++;
-//                }
-//                if (currentNode.rightChild != null)
-//                {
-//                    currentNode = lastNode;
-//                    currentNode = currentNode.rightChild;
-//                    xPointer = pointerMemory + 50;
-//                    nodeLabels.add(new JLabel());
-//                    JLabel nodeTemp = nodeLabels.get(labelcount);
-//                    nodeTemp = LibraryComponents.LocateAJLabel(this, subSpring,String.valueOf(currentNode.key), xPointer, yPointer);
-//                    labelcount++;
-//                }
-//                currentNode = null;
-//
-//            }
-    }
-
-    public void postOrderTraverseTree(BtNode focusBtNode) {
-
-        if (focusBtNode != null) {
-
-            postOrderTraverseTree(focusBtNode.leftChild);
-            postOrderTraverseTree(focusBtNode.rightChild);
-
-
-        }
-
-    }
 
 
 
@@ -235,6 +174,23 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         loadTable(springLayout);
         loadDetailView(springLayout, 30);
         UpdateTableDetailView();
+    }
+
+    public void displayBinaryTree (BinaryTree sentTree)
+    {
+        setBounds(50, 50, 950, 750);
+        setTitle("Now Viewing the binary tree");
+        addWindowListener(new WindowAdapter()
+        {
+        });
+        SpringLayout subSpring = new SpringLayout();
+        setLayout(subSpring);
+        setResizable(false);
+        setVisible(true);
+        JTextArea txtBinaryTreeDisplay;
+        txtBinaryTreeDisplay = LibraryComponents.LocateAJTextArea(this, subSpring, 10,10,45,85);
+        print2D(sentTree.root);
+        txtBinaryTreeDisplay.setText(globalOutput);
     }
 
     private void loadDetailView(SpringLayout layout, int loadHeight)
@@ -522,7 +478,8 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         if (e.getSource() == btnDisplayBinaryTree)
         {
             ManagerWindow subWindow = new ManagerWindow();
-            subWindow.runTreeWindow(theTree);
+            subWindow.displayBinaryTree(theTree);
+
 
         }
 
@@ -723,6 +680,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
     public void handle(String sent)
     {
+        System.out.println("Handle: " + sent);
         if (sent.equals(".bye"))
         {
             txtDetailQuestion.setText("Good bye. Press EXIT button to exit ...");
@@ -840,6 +798,58 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         responseTotal = 0;
         txtLinkedList.setText(mainLinkedList.toString());
 
+    }
+
+    // Function to print binary tree in 2D
+    // It does reverse inorder traversal
+    public void print2DUtil(BtNode root, int space)
+    {
+        // Base case
+        if (root == null)
+            return;
+
+        // Increase distance between levels
+        space += COUNT;
+
+        // Process right child first
+        print2DUtil(root.rightChild, space);
+
+        // Print current node after space
+        // count
+        globalOutput = globalOutput+  "\n";
+        for (int i = COUNT; i < space; i++)
+            globalOutput = globalOutput + " ";
+        globalOutput = globalOutput + root.key + "\n";
+
+        // Process left child
+        print2DUtil(root.leftChild, space);
+
+//        // Base case
+//        if (root == null)
+//            return;
+//
+//        // Increase distance between levels
+//        space += COUNT;
+//
+//        // Process right child first
+//        print2DUtil(root.rightChild, space, output);
+//
+//        // Print current node after space
+//        // count
+//        System.out.print("\n");
+//        for (int i = COUNT; i < space; i++)
+//            System.out.print(" ");
+//        System.out.print(root.key + "\n");
+//
+//        // Process left child
+//        print2DUtil(root.leftChild, space, output);
+    }
+
+    // Wrapper over print2DUtil()
+    public void print2D(BtNode root)
+    {
+        // Pass initial space count as 0
+        print2DUtil(root, 0);
     }
 
 }
