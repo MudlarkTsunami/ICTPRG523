@@ -13,30 +13,22 @@ import static org.apache.commons.io.FileUtils.byteCountToDisplaySize;
 import static org.apache.commons.io.FileUtils.sizeOf;
 
 
-
-/*
-
-Mark's Comments (21/8/2021):
-
- - SurveyDataGlobal - is an array of SurveyQuestionData objects
- - readFromFile method - reads the data from the data file and adds it to SurveyDataGlobal array.
- - The Bubble Sort methods work with SurveyQuestionData objects arrays
- - dataValues is a 2D Array and loads 3 columns of data from the SurveyDataGlobal array
- - dataValues has been declared locally in the loadTable method.
- - the model and JTable (surveyModel and questionsTable) are based on dataValues, not SurveyDataGlobal
- - SurveyDataGlobal is being sorted, dataValues is NOT being sorted, nor updated.
- - Therefore the table (questionsTable) is not displaying the newly sorted data
-
- - You may be aware already, but I also noted that your current Bubble Sort methods
-       only sort the Question Number and not the other 7 fields.
-
-
- - Interim updates made:
-   - dataValues has been made global.
-   - In the 'run' method the bubble sort line (added for testing purposes) has been commented out
-   - In the ActionPerformed method, code has been added to the section:  if (e.getSource() == btnSortQuestion)
-
-*/
+/*******************************************************************************************
+ *
+ * Program: Flawless Feedback Manager
+ *
+ * Version: 0.30
+ *
+ * Date: 25/10/2021
+ *
+ * Author: Hayden Baker
+ *
+ * Notes: This program forms part of a set with the Flawless Feedback client program and
+ * Message server. This section of the application is for a Manager computer, which will
+ * read a selection of surveys from a file, of which a user can select one to send out to
+ * all connected client programs via the message server.
+ *
+ ********************************************************************************************/
 
 /**
  * <H1>ManagerWindow Program</H1>
@@ -122,7 +114,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             }
         });
         setResizable(false);
-        setVisible(true);
+
         getParameters();
 
 
@@ -134,7 +126,8 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
 
         //Display elements
         displayMainGUI();
-        DisplayTimerView();
+        setVisible(true);
+
 
         //Connecting to message server
         connect(serverName, serverPort);
@@ -169,6 +162,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
         loadTable(springLayout);
         loadDetailView(springLayout, 30);
         UpdateTableDetailView();
+        DisplayTimerView();
     }
 
     /**
@@ -629,7 +623,7 @@ public class ManagerWindow extends JFrame implements ActionListener, KeyListener
             //0 at beginning of string marks the message as having come from the manager program
             streamOut.writeUTF("0;" + PackageData(SurveyDataGlobal[selectedSurvey]) + Timer);
             streamOut.flush();
-            txtDetailTopic.setText("");
+            //txtDetailTopic.setText("");
             linkedTemp = SurveyDataGlobal[selectedSurvey].getTopic() + ", Qn" + SurveyDataGlobal[selectedSurvey].getQuestionInt();
             theTree.addBtNode(SurveyDataGlobal[selectedSurvey].getQuestionInt(), SurveyDataGlobal[selectedSurvey].getTopic());
             new Thread(() -> DisplayTimer(Timer)).start();
